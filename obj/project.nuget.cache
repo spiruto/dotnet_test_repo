@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "yXxUjegTQ5c=",
+  "dgSpecHash": "2Yy2Pt4cZFM=",
   "success": true,
-  "projectFilePath": "/Users/danicrqa/Documents/docker compose global/web/razorApp.csproj",
+  "projectFilePath": "/workspace/razorApp/web/razorApp.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

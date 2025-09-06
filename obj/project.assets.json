@@ -8,19 +8,19 @@
     "net9.0": []
   },
   "packageFolders": {
-    "/Users/danicrqa/.nuget/packages/": {}
+    "/root/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/danicrqa/Documents/docker compose global/web/razorApp.csproj",
+      "projectUniqueName": "/workspace/razorApp/web/razorApp.csproj",
       "projectName": "razorApp",
-      "projectPath": "/Users/danicrqa/Documents/docker compose global/web/razorApp.csproj",
-      "packagesPath": "/Users/danicrqa/.nuget/packages/",
-      "outputPath": "/Users/danicrqa/Documents/docker compose global/web/obj/",
+      "projectPath": "/workspace/razorApp/web/razorApp.csproj",
+      "packagesPath": "/root/.nuget/packages/",
+      "outputPath": "/workspace/razorApp/web/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/Users/danicrqa/.nuget/NuGet/NuGet.Config"
+        "/root/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
@@ -68,7 +68,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.304/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/9.0.304/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
