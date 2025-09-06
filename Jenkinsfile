@@ -53,17 +53,20 @@ pipeline {
 
     stage('Health check') {
       steps {
-        sh '''
-          n=0
-          until [ $n -ge 10 ]; do
-            if curl -fsS '${HEALTH_URL}' >/dev/null; then
-              echo 'Healthy'; exit 0
-            fi
-            n=$((n+1)); echo "Waiting for app... ($n/10)"; sleep 2
-          done
-          echo 'App did not become healthy in time' >&2
-          exit 1
-        '''
+        sh """
+      n=0
+      until [ \$n -ge 10 ]; do
+        if curl -fsS "\${HEALTH_URL}" >/dev/null; then
+          echo 'Healthy'
+          exit 0
+        fi
+        n=\$((n+1))
+        echo "Waiting for app... (\$n/10)"
+        sleep 2
+      done
+      echo 'App did not become healthy in time' >&2
+      exit 1
+    """
       }
     }
   }
