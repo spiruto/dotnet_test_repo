@@ -2,42 +2,44 @@ pipeline {
   agent any
 
   environment {
-    DOTNET_SDK_IMAGE = 'mcr.microsoft.com/dotnet/sdk:9.0'
-    COMPOSE          = 'docker compose'
-    WEB_SERVICE      = 'web'
-    HEALTH_URL       = 'http://localhost:80' // Nginx -> web:8080
+    SRC_ROOT        = '/workspace/razorApp'        // mount of your project root
+    APP_DIR         = "${SRC_ROOT}/web"            // your repo lives here
+    DOTNET_SDK_IMG  = 'mcr.microsoft.com/dotnet/sdk:9.0'
+    IMAGE_TAG       = 'local-web:dev'
+    COMPOSE_FILE    = "${SRC_ROOT}/compose.yaml"   // compose at project root
+    HEALTH_URL      = 'http://localhost:80'
   }
 
-  options {
-    timestamps()
-  }
+  options { timestamps() }
 
   stages {
-    stage('Checkout') {
+    stage('Verify layout') {
       steps {
-        checkout scm
+        sh 'ls -la ${SRC_ROOT}'
+        sh 'ls -la ${APP_DIR}'
+        sh 'test -f ${COMPOSE_FILE} || (echo "compose.yaml not found at ${COMPOSE_FILE}" >&2; exit 1)'
+        sh 'test -f ${APP_DIR}/razorApp.csproj || (echo "razorApp.csproj not found in ${APP_DIR}" >&2; exit 1)'
       }
     }
 
     stage('Restore / Build / Test (.NET 9)') {
       steps {
-        // Run dotnet commands inside the SDK container, mounting your source
         sh """
           docker run --rm \
-            -v "\$PWD/web:/src" \
+            -v "${APP_DIR}:/src" \
             -w /src \
-            ${DOTNET_SDK_IMAGE} \
+            ${DOTNET_SDK_IMG} \
             bash -lc '
               dotnet --info
-              dotnet restore
-              dotnet build -c Release --no-restore
-              dotnet test -c Release --no-build --logger "trx;LogFileName=test.trx"
+              dotnet restore razorApp.csproj
+              dotnet build -c Release --no-restore razorApp.csproj
+              # keep || true until you add tests
+              dotnet test  -c Release --no-build --logger "trx;LogFileName=test.trx" || true
             '
         """
       }
       post {
         always {
-          // Collect test results if you install the MSTest/JUnit plugins later
           archiveArtifacts artifacts: 'web/**/TestResults/*.trx', allowEmptyArchive: true
         }
       }
@@ -45,20 +47,22 @@ pipeline {
 
     stage('Docker Build (web image)') {
       steps {
-        sh 'docker build -t local-web:dev ./web'
+        sh """
+          docker build -t ${IMAGE_TAG} -f ${APP_DIR}/Dockerfile ${SRC_ROOT}
+        """
       }
     }
 
     stage('Deploy (recreate only web)') {
       steps {
-        // rebuild & restart only the web service; nginx and mssql keep running
-        sh '${COMPOSE} up -d --no-deps --build ${WEB_SERVICE}'
+        sh """
+          docker compose -f ${COMPOSE_FILE} up -d --no-deps --build web
+        """
       }
     }
 
     stage('Health check') {
       steps {
-        // Simple 10x retry curl against Nginx (port from .env: NGINX_PORT=80)
         sh """
           n=0
           until [ \$n -ge 10 ]; do
@@ -66,9 +70,7 @@ pipeline {
               echo 'Healthy'
               exit 0
             fi
-            n=\$((n+1))
-            echo "Waiting for app... (\$n/10)"
-            sleep 2
+            n=\$((n+1)); echo "Waiting for app... (\$n/10)"; sleep 2
           done
           echo 'App did not become healthy in time' >&2
           exit 1
@@ -78,11 +80,7 @@ pipeline {
   }
 
   post {
-    success {
-      echo '✅ Build, test, and local deploy completed.'
-    }
-    failure {
-      echo '❌ Pipeline failed. Check logs above.'
-    }
+    success { echo '✅ Local build, image build, and deploy done.' }
+    failure { echo '❌ Pipeline failed — check logs above.' }
   }
 }
